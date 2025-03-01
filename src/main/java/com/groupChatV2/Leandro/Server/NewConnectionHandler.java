@@ -32,8 +32,8 @@ public class NewConnectionHandler implements Runnable{
             output = new ObjectOutputStream(socket.getOutputStream());
             input = new ObjectInputStream(socket.getInputStream());
 
-            RegistrationPacket regitrationData = (RegistrationPacket) input.readObject();
-            String username = regitrationData.getUsername();
+            RegistrationPacket registerData = (RegistrationPacket) input.readObject();
+            String username = registerData.getUsername();
 
             if(username.length() < 3){
                 //TODO better username check.
@@ -41,14 +41,14 @@ public class NewConnectionHandler implements Runnable{
                 throw new ConnectionRefusedException("Connection from "+socket.getInetAddress().getHostAddress()+" was refused!");
             }
 
-            User user = new User(UUID.randomUUID(),regitrationData.getUsername(), socket.getInetAddress().getHostAddress(), output, input);
+            User user = new User(UUID.randomUUID(),registerData.getUsername(), socket.getInetAddress().getHostAddress(), output, input);
             Server.getUsersList().add(user);
             output.writeObject(new RegistrationPacket(user.getUUID()));
 
         }catch (IOException e){
             System.out.println("Failed to set input&output streams: "+e.getMessage());
         } catch (ClassNotFoundException e) {
-            System.out.println("Error trying to parse a class: "+e.getMessage());
+            System.out.println("This packet is not a registration packet!: "+e.getMessage());
         } catch (ConnectionRefusedException e){
             System.out.println(e.getMessage());
         }
