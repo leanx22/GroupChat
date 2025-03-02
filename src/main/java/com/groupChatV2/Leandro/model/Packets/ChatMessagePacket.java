@@ -4,7 +4,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.UUID;
 
-public class ChatMessagePacket {
+public class ChatMessagePacket extends Packet {
     private final Date date;
     private final String authorUsername;
     private final UUID authorUID;
@@ -16,13 +16,6 @@ public class ChatMessagePacket {
         this.content = content;
         this.authorUsername = author;
         this.authorUID = authorUID;
-    }
-
-    public ChatMessagePacket(Date date, String author, String content){
-        this.date = date;
-        this.content = content;
-        this.authorUsername = author;
-        this.authorUID = null;
     }
 
     public Date getDate(){

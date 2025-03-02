@@ -1,39 +1,26 @@
 package com.groupChatV2.Leandro.model;
 
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import com.groupChatV2.Leandro.Server.ConnectionManager;
 import java.util.UUID;
 
 public class User {
     private final String username;
-    private final String IP;
-    private final ObjectOutputStream output;
-    private final ObjectInputStream input;
     private final UUID uuid;
+    private final ConnectionManager connection;
 
     //TODO const.
-    public User(UUID uuid, String username, String IP, ObjectOutputStream output, ObjectInputStream input){
+    public User(UUID uuid, String username, ConnectionManager connectionManager){
         this.uuid = uuid;
         this.username = username;
-        this.IP = IP;
-        this.output = output;
-        this.input = input;
+        this.connection = connectionManager;
     }
 
     public String getUsername(){
         return this.username;
     }
 
-    public String getIP(){
-        return this.IP;
-    }
-
-    public ObjectOutputStream getOutput(){
-        return this.output;
-    }
-
-    public ObjectInputStream getInput(){
-        return this.input;
+    public ConnectionManager getConnectionManager(){
+        return this.connection;
     }
 
     public UUID getUUID(){
@@ -44,12 +31,6 @@ public class User {
     public boolean equals(Object obj) {
         if(obj == null)return false;
         if(!(obj instanceof User)) return false;
-
-        boolean res = false;
-        if(((User) obj).getUUID() == this.uuid){
-            res = true;
-        }
-
-        return res;
+        return ((User) obj).getUUID() == this.uuid;
     }
 }
