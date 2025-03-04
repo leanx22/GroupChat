@@ -2,6 +2,9 @@ package com.groupChatV2.Leandro.Server;
 
 import com.groupChatV2.Leandro.model.User;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -13,20 +16,20 @@ import java.util.UUID;
 public class Server {
     private static final Set<User> usersList = Collections.synchronizedSet(new HashSet<>());
     private static final UUID serverUUID = UUID.randomUUID();
+    private static final Logger logger = LogManager.getLogger("ServerLogger");
 
     public static void startServer(int port){
-        System.out.println("Starting server on port: "+port);
-
+        logger.info("Starting server");
         try(ServerSocket serverSocket = new ServerSocket(port)){
-            System.out.println("Server running and listening for new clients on port :"+port+"...");
+            logger.info("Server running and listening for new clients on port :{}...",port);
             while(true){
                 Socket clientSocket = serverSocket.accept();
-                NewConnectionHandler.startAsDaemon(clientSocket);
+                NewConnectionHandler.startHandling(clientSocket);
             }
         }catch (IOException e){
-            System.out.println("Cant initialize the server: "+e.getMessage());
+            logger.error("Cant initialize the server", e);
         }finally {
-            System.out.println("Server closing");
+            logger.info("Closing application");
         }
     }
 

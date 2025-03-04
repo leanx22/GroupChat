@@ -4,6 +4,8 @@ import com.groupChatV2.Leandro.Exceptions.ConnectionRefusedException;
 import com.groupChatV2.Leandro.model.Packets.ErrorPacket;
 import com.groupChatV2.Leandro.model.Packets.RegistrationPacket;
 import com.groupChatV2.Leandro.model.User;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -13,12 +15,13 @@ import java.util.UUID;
 public class NewConnectionHandler extends Thread{
 
     private final Socket socket;
+    private static final Logger logger = LogManager.getLogger("ServerLogger");
 
     private NewConnectionHandler(Socket clientSocket){
         this.socket = clientSocket;
     }
 
-    public static void startAsDaemon(Socket clientSocket){
+    public static void startHandling(Socket clientSocket){
         Thread thread = new Thread(new NewConnectionHandler(clientSocket));
         thread.setDaemon(true);
         thread.start();
@@ -26,14 +29,13 @@ public class NewConnectionHandler extends Thread{
 
     @Override
     public void run() {
-        Thread thread = Thread.currentThread();
-        thread.setName("FRESH CONNECTION HANDLER ("+Thread.currentThread().threadId()+")");
-        thread.setPriority(Thread.MIN_PRIORITY);
-        System.out.println("["+thread.getName()+"] Handling a new connection from: "+socket.getInetAddress().getHostAddress());
+        Thread.currentThread().setName("FRESH CONNECTION HANDLER ("+Thread.currentThread().threadId()+")");
+        Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
+
+        logger.info("Handling a new connection from: {}", socket.getInetAddress().getHostAddress());
 
         try{
             ConnectionManager connectionManager = new ConnectionManager(socket);
-            System.out.println("["+thread.getName()+"]: Waiting for user to send the registration packet...");
             Object receivedPacket = connectionManager.getInput().readObject();
             if(!(receivedPacket instanceof RegistrationPacket registrationPacket)){
                 connectionManager.getOutput().writeObject(new ErrorPacket("Registration packet expected!"));
@@ -47,29 +49,21 @@ public class NewConnectionHandler extends Thread{
                 throw new ConnectionRefusedException("Bad username.");
             }
 
-            System.out.println("["+thread.getName()+"]: Packet received and handled successfully!");
-
-            System.out.println("["+thread.getName()+"]: Creating user...");
             User user = new User(UUID.randomUUID(), username, connectionManager);
-
-            System.out.println("["+thread.getName()+"]: Sending UUID to client...");
             connectionManager.getOutput().writeObject(new RegistrationPacket(user.getUUID()));
-
-            System.out.println("["+thread.getName()+"]: Saving client to user list...");
             Server.getUsersList().add(user);
 
-            System.out.println("["+thread.getName()+"]: Connection handled successfully, starting new client listening thread.");
+            logger.info("Connection handled successfully. UUID: {}", user.getUUID());
+
             ClientListener.startNewListener(user);
 
         }catch (ClassNotFoundException e){
-            System.out.println("["+thread.getName()+"]: The received packet could not be parsed: "+e.getMessage());
+            logger.error("The received packet could not be parsed",e);
         }catch (ConnectionRefusedException e){
-            System.out.println("["+thread.getName()+"]: Connection refused. Cause: "+e.getMessage());
+            logger.error("Connection refused.",e);
         }
         catch (IOException e) {
-            System.out.println("["+thread.getName()+"]: An IOException was captured: "+e.getMessage());
-            System.out.println("stack trace: ");
-            e.printStackTrace();
+            logger.error("An IOException was captured. Check log file for details.",e);
         }
     }
 

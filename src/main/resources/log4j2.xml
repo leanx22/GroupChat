@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+    <Appenders>
+        <!-- Appender de consola para sv -->
+        <Console name="ServerConsoleAppender" target="SYSTEM_OUT">
+            <PatternLayout pattern="[%d{dd-MM-yyyy HH:mm:ss}] [%t / %-5level]: %msg%n%throwable{full}"/>
+        </Console>
+
+        <!-- Appender de consola para cliente -->
+        <Console name="ClientConsoleAppender" target="SYSTEM_OUT">
+            <PatternLayout pattern="[%d{dd-MM-yyyy HH:mm:ss}] [%t / %-5level]: %msg%n"/>
+            <Filters>
+                <ThresholdFilter level="ERROR" onMatch="DENY" onMismatch="NEUTRAL"/>
+            </Filters>
+        </Console>
+
+        <!-- Appender para el archivo (siempre con stacktrace) -->
+        <File name="FileAppender" fileName="logs/${date:dd-MM-yyyy_HH-mm-ss}.log">
+            <PatternLayout pattern="[%d{dd-MM-yyyy HH:mm:ss}] [%t / %-5level]: %msg%n%throwable{full}"/>
+        </File>
+    </Appenders>
+
+    <Loggers>
+        <!-- Logger para el modo servidor -->
+        <Logger name="ServerLogger" level="info" additivity="false">
+            <AppenderRef ref="ServerConsoleAppender" />
+            <AppenderRef ref="FileAppender" />
+        </Logger>
+
+        <!-- Logger para el modo cliente -->
+        <Logger name="ClientLogger" level="info" additivity="false">
+            <AppenderRef ref="ClientConsoleAppender"/>"
+            <AppenderRef ref="FileAppender" />
+        </Logger>
+
+        <!-- Logger raíz (opcional, para logs no manejados por los loggers anteriores) -->
+        <Root level="error">
+            <AppenderRef ref="ServerConsoleAppender" />
+            <AppenderRef ref="FileAppender" />
+        </Root>
+    </Loggers>
+</Configuration>

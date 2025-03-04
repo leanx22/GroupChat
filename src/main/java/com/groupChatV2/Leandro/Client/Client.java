@@ -4,7 +4,8 @@ import com.groupChatV2.Leandro.Exceptions.ConnectionRefusedException;
 import com.groupChatV2.Leandro.model.Packets.ChatMessagePacket;
 import com.groupChatV2.Leandro.model.Packets.ErrorPacket;
 import com.groupChatV2.Leandro.model.Packets.RegistrationPacket;
-import com.groupChatV2.Leandro.model.User;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.*;
 import java.net.Socket;
@@ -13,10 +14,10 @@ import java.util.UUID;
 
 public class Client {
     private static UUID userUUID;
+    private static final Logger logger = LogManager.getLogger("ClientLogger");
 
     public static void startClient(int port, String serverIP){
-        System.out.println("Starting GroupChatV2 client...");
-
+        logger.info("Starting client");
         try(
                 ServerConnectionManager svConnectionManager = new ServerConnectionManager(new Socket(serverIP,port));
                 BufferedReader keyboard = new BufferedReader(new InputStreamReader(System.in));
@@ -25,17 +26,16 @@ public class Client {
             System.out.println("> Enter your username: ");
             String username = keyboard.readLine();
             RegistrationPacket registrationPacket = new RegistrationPacket(username);
-            System.out.println("Sending username to the server...");
-            svConnectionManager.getOutput().writeObject(registrationPacket);
 
-            System.out.println("Waiting server response...");
+            logger.info("Starting server registration, please wait...");
+            svConnectionManager.getOutput().writeObject(registrationPacket);
             Object receivedPacket = svConnectionManager.getInput().readObject();
             if(receivedPacket instanceof ErrorPacket){
                 throw new ConnectionRefusedException(((ErrorPacket) receivedPacket).getErrorMessage());
             }
             registrationPacket = (RegistrationPacket)receivedPacket;
             userUUID = registrationPacket.getUUID();
-            System.out.println("Connection approved. Your UID: "+userUUID);
+            logger.info("Connection settled. Your UUID: {}",userUUID);
 
             //Start listener thread loop
             Thread serverListener = new Thread(new ServerListener(svConnectionManager, userUUID));
@@ -53,12 +53,13 @@ public class Client {
                 if(text.equalsIgnoreCase("exit"))break;
             }
         }catch(IOException e){
-            System.out.println("IOException!: ");
-            e.printStackTrace();
+            logger.error(e);
         }catch (ClassNotFoundException e){
-            System.out.println("Cant parse the class: "+e.getMessage());
+            logger.error("Unable to parse class",e);
         }catch (ConnectionRefusedException e){
-            System.out.println("The connection was refused by the server: "+e.getMessage());
+            logger.error("Connection refused by the server",e);
+        }finally {
+            logger.info("Closing application");
         }
 
     }

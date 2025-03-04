@@ -2,11 +2,14 @@ package com.groupChatV2.Leandro.Server;
 
 import com.groupChatV2.Leandro.model.Packets.ChatMessagePacket;
 import com.groupChatV2.Leandro.model.User;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
-import java.io.ObjectOutputStream;
 
 public final class ChatBroadcaster{
+
+    private static final Logger logger = LogManager.getLogger("ServerLogger");
 
     private ChatBroadcaster(){}
 
@@ -14,7 +17,7 @@ public final class ChatBroadcaster{
         try{
             client.getConnectionManager().getOutput().writeObject(packet);
         }catch (IOException e){
-            System.out.println("An error has occurred trying to send a Chat packet to: "+client.getConnectionManager().getIP());
+            logger.error("Unable to send a chat packet to {}",client.getConnectionManager().getIP(),e);
         }
     }
 

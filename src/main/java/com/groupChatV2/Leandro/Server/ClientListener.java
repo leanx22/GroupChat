@@ -2,14 +2,16 @@ package com.groupChatV2.Leandro.Server;
 
 import com.groupChatV2.Leandro.model.Packets.ChatMessagePacket;
 import com.groupChatV2.Leandro.model.User;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-import java.io.EOFException;
 import java.io.IOException;
 import java.util.Date;
 
 public class ClientListener implements Runnable{
 
     private final User client;
+    private static final Logger logger = LogManager.getLogger("ServerLogger");
 
     private ClientListener(User client){
         this.client = client;
@@ -25,10 +27,9 @@ public class ClientListener implements Runnable{
 
     @Override
     public void run(){
-        System.out.println("["+Thread.currentThread().getName()+"] Starting to listen.");
+        logger.info("{}: Listening started.",client.getUUID());
 
         try{
-
             while(true){
                 Object receivedPacket = client.getConnectionManager().getInput().readObject();
                 if(receivedPacket instanceof ChatMessagePacket chatMessagePacket){
@@ -39,21 +40,20 @@ public class ClientListener implements Runnable{
             handleDisconnection(client);
         }
         catch (ClassNotFoundException | IOException e){
-            System.out.println("["+Thread.currentThread().getName()+"] WARNING: Client disconnection or unparseable packet: "+e.getMessage());
+            logger.warn("Client disconnection or unparseable packet",e);
             handleDisconnection(client);
         }
 
     }
 
     private void handleDisconnection(User client){
-        System.out.println("[" + Thread.currentThread().getName() + "] Closing connection with client...");
         try {
             Server.getUsersList().remove(client);
             client.getConnectionManager().closeConnection();
-            System.out.println("[" + Thread.currentThread().getName() + "] Client connection closed and removed from list.");
+            logger.info("{} has disconnected successfully.",client.getUUID());
             ChatBroadcaster.broadcastToAllClients(new ChatMessagePacket(new Date(), "SERVER", Server.getServerUUID(), client.getUsername()+" has disconnected."));
         } catch (IOException ioe) {
-            System.out.println("[" + Thread.currentThread().getName() + "] ERROR: Failed to close socket: " + ioe.getMessage());
+            logger.error("Failed to close the socket",ioe);
         }
     }
 
