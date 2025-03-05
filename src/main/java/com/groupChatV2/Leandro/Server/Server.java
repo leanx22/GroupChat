@@ -1,12 +1,14 @@
 package com.groupChatV2.Leandro.Server;
 
 import com.groupChatV2.Leandro.Utils.DaemonThreadFactory;
+import com.groupChatV2.Leandro.Utils.Validations;
 import com.groupChatV2.Leandro.model.User;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
+import java.net.BindException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Collections;
@@ -28,6 +30,12 @@ public class Server {
 
     public void startServer(int port, int maxClients){
         logger.info("Starting server");
+
+        if(Validations.isMaxClientCountExpensive(maxClients)){
+            logger.warn("The configured maximum number of clients is too high for your hardware. " +
+                    "This may lead to excessive resource usage and performance issues. Consider lowering the maximum client limit.");
+        }
+
         this.clientListenerPool = Executors.newFixedThreadPool(maxClients, new DaemonThreadFactory());
         try(ServerSocket serverSocket = new ServerSocket(port)){
             logger.info("Server running and listening for new clients on port :{}...",port);
@@ -35,7 +43,10 @@ public class Server {
                 Socket clientSocket = serverSocket.accept();
                 connectionHandlerPool.execute(new NewConnectionHandler(clientSocket, this));
             }
-        }catch (IOException e){
+        }catch (BindException e){
+            logger.error("Cant bind to port {}", port, e);
+        }
+        catch (IOException e){
             logger.error("Cant initialize the server", e);
         }finally {
             logger.info("Closing application");

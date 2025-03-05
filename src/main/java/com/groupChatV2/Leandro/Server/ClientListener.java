@@ -25,6 +25,8 @@ public class ClientListener implements Runnable{
         Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
         logger.info("{}: Listening started.",client.getUUID());
 
+        server.getChatMessagesBroadcaster().broadcastToAllClients(new ChatMessagePacket(new Date(), "SERVER", server.getServerUUID(), client.getUsername()+" joined the chat!"));
+
         try{
             while(true){
                 Object receivedPacket = client.getConnectionManager().getInput().readObject();
