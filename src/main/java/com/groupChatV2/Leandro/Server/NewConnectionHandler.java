@@ -12,25 +12,21 @@ import java.net.Socket;
 import java.util.UUID;
 
 ///Handles fresh connections from clients.
-public class NewConnectionHandler extends Thread{
+public class NewConnectionHandler implements Runnable{
 
     private final Socket socket;
+    private final Server server;
     private static final Logger logger = LogManager.getLogger("ServerLogger");
 
-    private NewConnectionHandler(Socket clientSocket){
+    public NewConnectionHandler(Socket clientSocket, Server server){
         this.socket = clientSocket;
-    }
-
-    public static void startHandling(Socket clientSocket){
-        Thread thread = new Thread(new NewConnectionHandler(clientSocket));
-        thread.setDaemon(true);
-        thread.start();
+        this.server = server;
     }
 
     @Override
     public void run() {
-        Thread.currentThread().setName("FRESH CONNECTION HANDLER ("+Thread.currentThread().threadId()+")");
-        Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
+        Thread.currentThread().setName("CONNECTION HANDLER | "+Thread.currentThread().threadId());
+        Thread.currentThread().setPriority(Thread.NORM_PRIORITY);
 
         logger.info("Handling a new connection from: {}", socket.getInetAddress().getHostAddress());
 
@@ -51,11 +47,11 @@ public class NewConnectionHandler extends Thread{
 
             User user = new User(UUID.randomUUID(), username, connectionManager);
             connectionManager.getOutput().writeObject(new RegistrationPacket(user.getUUID()));
-            Server.getUsersList().add(user);
+            server.getUsersList().add(user);
+
+            server.getClientListenerThreadPool().execute(new ClientListener(user, server));
 
             logger.info("Connection handled successfully. UUID: {}", user.getUUID());
-
-            ClientListener.startNewListener(user);
 
         }catch (ClassNotFoundException e){
             logger.error("The received packet could not be parsed",e);

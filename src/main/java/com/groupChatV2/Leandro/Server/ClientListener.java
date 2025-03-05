@@ -11,22 +11,18 @@ import java.util.Date;
 public class ClientListener implements Runnable{
 
     private final User client;
+    private final Server server;
     private static final Logger logger = LogManager.getLogger("ServerLogger");
 
-    private ClientListener(User client){
+    public ClientListener(User client, Server server){
+        this.server = server;
         this.client = client;
-    }
-
-    public static void startNewListener(User client){
-        Thread thread = new Thread(new ClientListener(client));
-        thread.setDaemon(true);
-        thread.setPriority(Thread.MIN_PRIORITY);
-        thread.setName("CLIENT_LISTENER / "+client.getUUID().getLeastSignificantBits());
-        thread.start();
     }
 
     @Override
     public void run(){
+        Thread.currentThread().setName("CLIENT_LISTENER / "+client.getUUID().getLeastSignificantBits());
+        Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
         logger.info("{}: Listening started.",client.getUUID());
 
         try{
@@ -34,13 +30,13 @@ public class ClientListener implements Runnable{
                 Object receivedPacket = client.getConnectionManager().getInput().readObject();
                 if(receivedPacket instanceof ChatMessagePacket chatMessagePacket){
                     if(chatMessagePacket.getContent().equalsIgnoreCase("exit"))break;
-                    ChatBroadcaster.broadcastToAllClients(chatMessagePacket);
+                    server.getChatMessagesBroadcaster().broadcastToAllClients(chatMessagePacket);
                 }
             }
             handleDisconnection(client);
         }
         catch (ClassNotFoundException | IOException e){
-            logger.warn("Client disconnection or unparseable packet",e);
+            logger.warn("Unexpected client disconnection or unparseable packet",e);
             handleDisconnection(client);
         }
 
@@ -48,10 +44,10 @@ public class ClientListener implements Runnable{
 
     private void handleDisconnection(User client){
         try {
-            Server.getUsersList().remove(client);
+            server.getUsersList().remove(client);
             client.getConnectionManager().closeConnection();
             logger.info("{} has disconnected successfully.",client.getUUID());
-            ChatBroadcaster.broadcastToAllClients(new ChatMessagePacket(new Date(), "SERVER", Server.getServerUUID(), client.getUsername()+" has disconnected."));
+            server.getChatMessagesBroadcaster().broadcastToAllClients(new ChatMessagePacket(new Date(), "SERVER", server.getServerUUID(), client.getUsername()+" has disconnected."));
         } catch (IOException ioe) {
             logger.error("Failed to close the socket",ioe);
         }

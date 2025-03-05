@@ -9,11 +9,14 @@ import java.io.IOException;
 
 public final class ChatBroadcaster{
 
+    private final Server server;
     private static final Logger logger = LogManager.getLogger("ServerLogger");
 
-    private ChatBroadcaster(){}
+    public ChatBroadcaster(Server server) {
+        this.server = server;
+    }
 
-    private static void sendChatPacketToClient(User client, ChatMessagePacket packet){
+    private synchronized void sendChatPacketToClient(User client, ChatMessagePacket packet){
         try{
             client.getConnectionManager().getOutput().writeObject(packet);
         }catch (IOException e){
@@ -21,9 +24,9 @@ public final class ChatBroadcaster{
         }
     }
 
-    public static void broadcastToAllClients(ChatMessagePacket packet){
-        synchronized (Server.getUsersList()){
-            for(User client: Server.getUsersList()){
+    public synchronized void broadcastToAllClients(ChatMessagePacket packet){
+        synchronized (server.getUsersList()){
+            for(User client: server.getUsersList()){
                 if(packet.getAuthorUUID() == client.getUUID()){
                     continue;
                 }

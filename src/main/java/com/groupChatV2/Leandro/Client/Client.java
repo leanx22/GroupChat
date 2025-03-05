@@ -8,15 +8,17 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.*;
+import java.net.ConnectException;
 import java.net.Socket;
 import java.util.Date;
 import java.util.UUID;
 
 public class Client {
-    private static UUID userUUID;
+    private UUID userUUID;
+    private Thread serverListener;
     private static final Logger logger = LogManager.getLogger("ClientLogger");
 
-    public static void startClient(int port, String serverIP){
+    public void startClient(int port, String serverIP){
         logger.info("Starting client");
         try(
                 ServerConnectionManager svConnectionManager = new ServerConnectionManager(new Socket(serverIP,port));
@@ -38,7 +40,7 @@ public class Client {
             logger.info("Connection settled. Your UUID: {}",userUUID);
 
             //Start listener thread loop
-            Thread serverListener = new Thread(new ServerListener(svConnectionManager, userUUID));
+            serverListener = new Thread(new ServerListener(svConnectionManager, userUUID));
             serverListener.setDaemon(true);
             serverListener.setName("SERVER_LISTENER");
             serverListener.setPriority(Thread.NORM_PRIORITY);
@@ -52,7 +54,10 @@ public class Client {
                 svConnectionManager.getOutput().writeObject(new ChatMessagePacket(new Date(), username, userUUID, text));
                 if(text.equalsIgnoreCase("exit"))break;
             }
-        }catch(IOException e){
+        }catch (ConnectException e){
+            logger.error("Connection error",e);
+        }
+        catch(IOException e){
             logger.error(e);
         }catch (ClassNotFoundException e){
             logger.error("Unable to parse class",e);
@@ -60,6 +65,7 @@ public class Client {
             logger.error("Connection refused by the server",e);
         }finally {
             logger.info("Closing application");
+            if(serverListener.isAlive())serverListener.interrupt();
         }
 
     }

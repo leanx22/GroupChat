@@ -11,6 +11,7 @@ import java.util.UUID;
 public class ServerListener extends Thread{
     private final ServerConnectionManager serverConnectionManager;
     private final UUID uuid;
+    private boolean interrupt = false;
     private static final Logger logger = LogManager.getLogger("ClientLogger");
 
     public ServerListener(ServerConnectionManager serverConnectionManager, UUID uuid){
@@ -21,11 +22,12 @@ public class ServerListener extends Thread{
     @Override
     public void run() {
         try{
-            while(true){
+            while(!interrupt){
                 Object packet = serverConnectionManager.getInput().readObject();
                 if(packet instanceof ChatMessagePacket userTextMessage){
                     if(userTextMessage.getAuthorUUID().equals(uuid)) continue;
-                    System.out.println(userTextMessage.getFormattedMessage());
+                    System.out.println("*----------------------------*");
+                    System.out.println("> "+userTextMessage.getFormattedMessage());
                     System.out.println("*----------------------------*");
                 }
             }
@@ -39,5 +41,10 @@ public class ServerListener extends Thread{
         }finally {
             logger.info("Server listening interrupted.");
         }
+    }
+
+    @Override
+    public void interrupt() {
+        this.interrupt = true;
     }
 }

@@ -5,10 +5,13 @@ public class ArgumentsParser {
     private final AppLaunchModes mode;
     private final String ip;
     private final int port;
+    private final int maxClients;
 
     public ArgumentsParser(String[] args){
         if(args.length < 2){
-            throw new IllegalArgumentException("Usage: java -jar GroupChat.jar <server|client> <port> [sv_ip (only client)]");
+            throw new IllegalArgumentException("Usage: \n" +
+                    ">FOR SERVER: java -jar GroupChat.jar server <port> <max_clients>\n" +
+                    ">FOR CLIENT: java -jar GroupChat.jar client <port> <server_ip>");
         }
 
         if(args[0].equalsIgnoreCase("server")){
@@ -31,8 +34,21 @@ public class ArgumentsParser {
                 throw new IllegalArgumentException("Please, specify the server IP");
             }
             this.ip = args[2];
+            this.maxClients = 0;
         }else{
             this.ip = null;
+            try{
+                if(args.length<3){
+                    this.maxClients = 5;
+                }else{
+                    this.maxClients = Integer.parseInt(args[2]);
+                    if(this.maxClients < 2){
+                        throw new NumberFormatException();
+                    }
+                }
+            }catch(NumberFormatException e){
+                throw new IllegalArgumentException("Max_clients must be an integer greater than 2.");
+            }
         }
     }
 
@@ -48,6 +64,8 @@ public class ArgumentsParser {
         return this.ip;
     }
 
-
+    public int getMaxClients(){
+        return this.maxClients;
+    }
 
 }
